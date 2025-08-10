@@ -3,10 +3,10 @@ mod category;
 mod item;
 use uuid::Uuid;
 
-use crate::{category::Category, item::Item};
+use crate::item::{add_item, delete_item, retrieve_all_items, search_menu, update_item, Item};
 
 fn main() {
-    let mut iventory: HashMap<Uuid, Item> = HashMap::new();
+    let mut inventory: HashMap<Uuid, Item> = HashMap::new();
     println!("Welcome to Inventory System!");
 
     loop {
@@ -26,7 +26,7 @@ fn main() {
             .read_line(&mut choice)
             .expect("Faild to read line");
 
-        let chioce: u32 = match choice.trim().parse() {
+        let choice: u32 = match choice.trim().parse() {
             Ok(num) => num,
             Err(_) => {
                 println!("Please enter a valid number");
@@ -34,19 +34,20 @@ fn main() {
             }
         };
 
-        //match choice {
-        //    //1 => {}
-        //    //2 => {}
-        //    //3 => {}
-        //    //4 => {}
-        //    //5 => {}
-        //    6 => {
-        //        println!("Goodbye! 👋");
-        //    }
-        //    _ => {
-        //        println!("Invalid choice, try again.");
-        //        continue;
-        //    }
-        //};
+        match choice {
+            1 => add_item(&mut inventory),
+            2 => retrieve_all_items(&inventory),
+            3 => search_menu(&inventory),
+            4 => update_item(&mut inventory),
+            5 => delete_item(&mut inventory),
+            6 => {
+                println!("Goodbye! 👋");
+                break;
+            }
+            _ => {
+                println!("Invalid choice, try again.");
+                continue;
+            }
+        };
     }
 }

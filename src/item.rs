@@ -40,9 +40,11 @@ impl Item {
 
 pub fn add_item(inventory: &mut HashMap<Uuid, Item>) {
     loop {
-        println!("Enter name: ");
+        println!("Enter name:");
 
         let name = input_trimmed();
+
+        println!("Enter quanity:");
 
         let mut quantity = String::new();
 
@@ -57,6 +59,8 @@ pub fn add_item(inventory: &mut HashMap<Uuid, Item>) {
                 continue;
             }
         };
+
+        println!("Enter price:");
 
         let mut price = String::new();
 
@@ -108,6 +112,54 @@ where
     }
 }
 
+pub fn search_menu(inventory: &HashMap<Uuid, Item>) {
+    loop {
+        println!("Search by:");
+        println!("1. ID");
+        println!("2. Name");
+        println!("3. Category");
+        println!("4. Back to main menu");
+
+        let mut choice = String::new();
+
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("Failed to read line");
+
+        let choice: i32 = match choice.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Please enter a valid number");
+                continue;
+            }
+        };
+
+        match choice {
+            1 => {
+                println!("Enter the ID to search:");
+                let id_input = input_trimmed();
+                match Uuid::parse_str(&id_input) {
+                    Ok(id) => {
+                        search_by_id(inventory, id);
+                    }
+                    Err(_) => println!("Invalid UUID format."),
+                }
+            }
+            2 => {
+                println!("Enter the name or part of the name to search:");
+                let name_query = input_trimmed();
+                search_by_name(inventory, &name_query);
+            }
+            3 => {
+                let category = read_category();
+                search_by_category(inventory, category);
+            }
+            4 => break,
+            _ => println!("Invalid choice, try again."),
+        }
+    }
+}
+
 pub fn search_by_name(inventory: &HashMap<Uuid, Item>, query: &str) {
     let query_lower = query.to_lowercase();
     search_items(inventory, |item| {
@@ -125,37 +177,108 @@ pub fn search_by_id(inventory: &HashMap<Uuid, Item>, id: Uuid) {
         None => println!("No item found with ID: {id}"),
     }
 }
-//pub fn search_item_by_id(inventory: &HashMap<Uuid, Item>) {
-//    println!("Enter the id to search for:");
-//    let id_str = input_trimmed();
-//
-//    match Uuid::parse_str(&id_str) {
-//        Ok(id) => match inventory.get(&id) {
-//            Some(item) => println!("Found item:\n{}", item),
-//            None => println!("No item found with ID: {}", id),
-//        },
-//        Err(_) => println!("Invalid UUID format."),
-//    }
-//}
-//
-//pub fn search_item_by_name(inventory: &HashMap<Uuid, Item>) {
-//    println!("Enter the name or part of the name to search for:");
-//    let query = input_trimmed().to_lowercase();
-//
-//    let mut results: Vec<&Item> = inventory
-//        .values()
-//        .filter(|item| item.name.to_lowercase().contains(&query))
-//        .collect();
-//
-//    if results.is_empty() {
-//        println!("No items found matching '{query}'.");
-//    } else {
-//        println!("Found {} item(s):", results.len());
-//        for item in results {
-//            println!("{item}");
-//        }
-//    }
-//}
+
+pub fn delete_item(inventory: &mut HashMap<Uuid, Item>) {
+    println!("Please enter the id of the item you would like to delete:");
+    let id_input = input_trimmed();
+    match Uuid::parse_str(&id_input) {
+        Ok(id) => {
+            if inventory.remove(&id).is_some() {
+                println!("Item deleted successfully");
+            } else {
+                println!("No item found with id: {id}");
+            }
+        }
+        Err(_) => println!("Invalid UUID format."),
+    }
+}
+
+pub fn update_item(inventory: &mut HashMap<Uuid, Item>) {
+    println!("Please enter the id of the item you would like to update:");
+    let id_input = input_trimmed();
+    match Uuid::parse_str(&id_input) {
+        Ok(id) => {
+            if let Some(item) = inventory.get_mut(&id) {
+                println!("Updating item: \n{item}");
+
+                println!("Enter new name (or press Enter to keep '{}'):", item.name);
+                let name = input_trimmed();
+                if !name.is_empty() {
+                    item.name = name;
+                }
+
+                println!(
+                    "Enter new quantity (or press Enter to keep '{}'):",
+                    item.quantity
+                );
+                let quantity_str = input_trimmed();
+                if !quantity_str.is_empty() {
+                    if let Ok(q) = quantity_str.parse::<u32>() {
+                        item.quantity = q;
+                    } else {
+                        println!("Invalid quantity input, keeping old value.");
+                    }
+                }
+
+                println!("Enter new price (or press Enter to keep '{}'):", item.price);
+                let price_str = input_trimmed();
+                if !price_str.is_empty() {
+                    if let Ok(p) = price_str.parse::<f32>() {
+                        item.price = p;
+                    } else {
+                        println!("Invalid price input, keeping old value.");
+                    }
+                }
+
+                println!("Choose new category (or press Enter to keep current):");
+                let new_category = read_category_optional(&item.category);
+                if let Some(cat) = new_category {
+                    item.category = cat;
+                }
+
+                println!("Item updated successfully.");
+            } else {
+                println!("No item found with ID: {id}");
+            }
+        }
+
+        Err(_) => println!("Invalid UUID format."),
+    }
+}
+
+fn read_category_optional(current: &Category) -> Option<Category> {
+    loop {
+        println!(
+            "Choose category or press Enter to keep current ({:?}):",
+            current
+        );
+        println!("1. Electronics");
+        println!("2. Food");
+        println!("3. Clothing");
+        println!("4. Other");
+
+        let mut choice = String::new();
+        io::stdin()
+            .read_line(&mut choice)
+            .expect("Failed to read line");
+
+        let choice: u32 = match choice.trim().parse() {
+            Ok(num) => num,
+            Err(_) => {
+                println!("Please enter a valid number");
+                continue;
+            }
+        };
+
+        match choice {
+            1 => return Some(Category::Electronics),
+            2 => return Some(Category::Food),
+            3 => return Some(Category::Clothing),
+            4 => return Some(Category::Other),
+            _ => println!("Invalid choice, try again."),
+        }
+    }
+}
 
 fn input_trimmed() -> String {
     let mut input = String::new();
@@ -168,7 +291,7 @@ fn input_trimmed() -> String {
 
 fn read_category() -> Category {
     loop {
-        println!("Choose your category within these options: ");
+        println!("Choose category:");
         println!("1. Electronics");
         println!("2. Food");
         println!("3. Clothing");
@@ -189,10 +312,10 @@ fn read_category() -> Category {
         };
 
         match choice {
-            1 => Category::Electronics,
-            2 => Category::Food,
-            3 => Category::Clothing,
-            4 => Category::Other,
+            1 => return Category::Electronics,
+            2 => return Category::Food,
+            3 => return Category::Clothing,
+            4 => return Category::Other,
             _ => {
                 println!("Invalid choice, try again.");
                 continue;
