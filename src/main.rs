@@ -1,10 +1,12 @@
 use std::{collections::HashMap, io};
 mod category;
 mod item;
+use uuid::Uuid;
+
 use crate::{category::Category, item::Item};
 
 fn main() {
-    let mut iventory: HashMap<Category, Vec<Item>> = HashMap::new();
+    let mut iventory: HashMap<Uuid, Item> = HashMap::new();
     println!("Welcome to Inventory System!");
 
     loop {
